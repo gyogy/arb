@@ -55,7 +55,11 @@ def set_up_driver(
     agent = ua.random 
 
     options = Options()
+
     options.set_preference("general.useragent.override", agent)
+    options.set_preference("dom.webdriver.enabled", False)
+
+    options.add_argument("--disable-blink-features=AutomationControlled") 
 
     if headless:
         options.add_argument("--headless")
@@ -64,6 +68,8 @@ def set_up_driver(
     
     if iwait:
         driver.implicitly_wait(iwait)
+
+    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
     agent = driver.execute_script("return navigator.userAgent")
     logger.info(f"User Agent used: {agent}")
