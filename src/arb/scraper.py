@@ -39,17 +39,17 @@ def supply_logger() -> logging.Logger:
     return logger
 
 
-logger = supply_logger()
 
 
-def check_ip():
+def check_ip(logger: logging.Logger):
     ip = requests.get("https://httpbin.org/ip").json()["origin"]
     logger.info(f"Using IP: {ip}")
 
 
 def set_up_driver(
-        headless: bool = False,
-        iwait: int = 0) -> WebDriver:
+    logger: logging.Logger,        
+    headless: bool = False,
+    iwait: int = 0) -> WebDriver:
 
     ua = UserAgent(browsers=["Firefox"])
     agent = ua.random 
@@ -93,16 +93,17 @@ def write_to_file(html: str):
         f.write(str(soup.prettify()))
     
 
-def search_for(term: str, html: str):
+def search_for(term: str, html: str, logger: logging.Logger):
     result = term in html
     logger.info(f"Found {term} in source? {result}")
 
 
 if __name__ == "__main__":
     url = "https://www.efbet.com/BG/sports#bo-navigation=281982.1&action=market-group-list"
-    check_ip()
-    driver = set_up_driver(iwait=10)
+    logger = supply_logger()
+    check_ip(logger)
+    driver = set_up_driver(logger, iwait=10)
     driver.get(url)
     write_to_file(driver.page_source)
-    search_for("НБА", driver.page_source)
+    search_for("НБА", driver.page_source, logger)
     driver.close()
