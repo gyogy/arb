@@ -1,13 +1,16 @@
 import datetime as dt
 import logging
 from pathlib import Path
-import requests
+import random
 import sys
 
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.webdriver import WebDriver
+from selenium.webdriver.support.ui import WebDriverWait
 
 
 def supply_logger() -> logging.Logger:
@@ -39,40 +42,37 @@ def supply_logger() -> logging.Logger:
     return logger
 
 
-
-
-def check_ip(logger: logging.Logger):
-    ip = requests.get("https://httpbin.org/ip").json()["origin"]
-    logger.info(f"Using IP: {ip}")
-
-
 def set_up_driver(
     logger: logging.Logger,        
     headless: bool = False,
-    iwait: int = 0) -> WebDriver:
+    ip_port: str = ""
+    ) -> WebDriver:
 
     ua = UserAgent(browsers=["Firefox"])
     agent = ua.random 
+    logger.info(f"User Agent used: {agent}")
 
     options = Options()
-
     options.set_preference("general.useragent.override", agent)
     options.set_preference("dom.webdriver.enabled", False)
-
     options.add_argument("--disable-blink-features=AutomationControlled") 
 
     if headless:
         options.add_argument("--headless")
 
+    if ip_port:
+        logger.info(f"Proxy used: {ip_port}")
+
+        ip, port = ip_port.split(":")
+        options.set_preference("network.proxy.type", 1)
+        options.set_preference("network.proxy.http", ip)
+        options.set_preference("network.proxy.http_port", int(port))
+        options.set_preference("network.proxy.ssl", ip)
+        options.set_preference("network.proxy.ssl_port", int(port))
+        options.set_preference("network.proxy.no_proxies_on", "")
+
     driver = WebDriver(options=options)
-    
-    if iwait:
-        driver.implicitly_wait(iwait)
-
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-
-    agent = driver.execute_script("return navigator.userAgent")
-    logger.info(f"User Agent used: {agent}")
 
     return driver
 
@@ -87,10 +87,10 @@ def write_to_file(html: str):
         tag = dt.datetime.now().strftime("_%y-%m-%d_%H:%M")
         tagged_stem = output.stem + tag
         output.rename(output.with_stem(tagged_stem))
-    
-    with open(output, "w") as f:
-        soup = BeautifulSoup(html, "html.parser")
-        f.write(str(soup.prettify()))
+
+        with open(output, "w") as f:
+            soup = BeautifulSoup(html, "html.parser")
+            f.write(str(soup.prettify()))
     
 
 def search_for(term: str, html: str, logger: logging.Logger):
@@ -98,11 +98,36 @@ def search_for(term: str, html: str, logger: logging.Logger):
     logger.info(f"Found {term} in source? {result}")
 
 
+def get_proxy(
+    driver: WebDriver,
+    proxy_list: str = "https://free-proxy-list.net/"
+) -> str:
+
+    driver.get(proxy_list)
+    
+    table = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, "div.table-responsive.fpl-list"))
+    )
+    rows = table.find_elements(By.TAG_NAME, "tr")
+    
+    data = list()
+    for row in rows:
+        cells = row.text.split(maxsplit=2)[:2]
+        ip_port = cells[0] + ":" + cells[1]
+        data.append(ip_port)
+    data.pop(0)
+    ip_port = random.choice(data)
+    driver.close()
+    return ip_port
+
+
 if __name__ == "__main__":
-    url = "https://www.efbet.com/BG/sports#bo-navigation=281982.1&action=market-group-list"
+    url = "https://www.efbet.com/"
     logger = supply_logger()
-    check_ip(logger)
-    driver = set_up_driver(logger, iwait=10)
+    proxy_getter = set_up_driver(logger, headless=True)
+    #    ip_port = get_proxy(proxy_getter)
+    ip_port = "13.37.89.201:80"
+    driver = set_up_driver(logger, ip_port=ip_port)
     driver.get(url)
     write_to_file(driver.page_source)
     search_for("НБА", driver.page_source, logger)
