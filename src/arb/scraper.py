@@ -32,7 +32,7 @@ def supply_logger() -> logging.Logger:
     stdout_handler.setLevel(logging.INFO)
     stdout_handler.setFormatter(formatter)
 
-    file_handler = logging.FileHandler(log_file_path, mode='w')
+    file_handler = logging.FileHandler(log_file_path, mode='w', delay=True)
     file_handler.setLevel(logging.WARNING)
     file_handler.setFormatter(formatter)
 
@@ -125,8 +125,7 @@ if __name__ == "__main__":
     url = "https://www.efbet.com/"
     logger = supply_logger()
     proxy_getter = set_up_driver(logger, headless=True)
-    #    ip_port = get_proxy(proxy_getter)
-    ip_port = "13.37.89.201:80"
+    ip_port = get_proxy(proxy_getter)
     driver = set_up_driver(logger, ip_port=ip_port)
     driver.get(url)
     write_to_file(driver.page_source)
