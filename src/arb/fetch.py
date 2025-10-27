@@ -10,19 +10,18 @@ def fetch_odds(sport: str, regions: str) -> List[Dict[str, Any]]:
         raise RuntimeError("API key not found in environment.")
 
     response = requests.get(
-        f'https://api.the-odds-api.com/v4/sports/{sport}/odds',
+        f"https://api.the-odds-api.com/v4/sports/{sport}/odds",
         params={
-            'api_key': api_key,
-            'regions': regions,
-            'markets': 'h2h',
-            'oddsFormat': 'decimal',
-            'dateFormat': 'iso',
-        }
+            "api_key": api_key,
+            "regions": regions,
+            "markets": "h2h",
+            "oddsFormat": "decimal",
+            "dateFormat": "iso",
+        },
     )
     response.raise_for_status()
 
-    print('Remaining requests:', response.headers.get('x-requests-remaining'))
-    print('Used requests:', response.headers.get('x-requests-used'))
+    print("Remaining requests:", response.headers.get("x-requests-remaining"))
+    print("Used requests:", response.headers.get("x-requests-used"))
 
     return response.json()
-
