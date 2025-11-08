@@ -10,6 +10,12 @@ venv/
 # Environment variables
 .env
 
+# SQLite database
+odds.db
+
+# Session notes
+session_summary.md
+
 # Config files
 pyrightconfig.json
 

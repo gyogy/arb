@@ -14,7 +14,8 @@ class Event:
 @dataclass
 class Odds:
     event_id: str
-    book: str
+    book_name: str
+    book_url: Optional[str]
     market_type: str
     last_update: str
     home_odds: Optional[float]
@@ -37,6 +38,7 @@ def flatten(d: Dict[str, Any]) -> Tuple[List[Event], List[Odds]]:
 
     for b in d["bookmakers"]:
         bk = b["key"]
+        burl = b.get("url")
         lupd = b["last_update"]
 
         for m in b["markets"]:
@@ -55,7 +57,8 @@ def flatten(d: Dict[str, Any]) -> Tuple[List[Event], List[Odds]]:
 
             odd = Odds(
                 event_id=d["id"],
-                book=bk,
+                book_name=bk,
+                book_url=burl,
                 market_type=mtype,
                 last_update=lupd,
                 home_odds=hodds,
@@ -64,8 +67,5 @@ def flatten(d: Dict[str, Any]) -> Tuple[List[Event], List[Odds]]:
             )
 
             odds.append(odd)
-
-    for o in odds:
-        print(o)
 
     return [event], odds
